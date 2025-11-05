@@ -3,118 +3,66 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Shibex XRP Journal — Spot & Futures</title>
+<title>Shibex XRP Journal — Spot & Futures (Patched)</title>
 <style>
-  :root{
-    --bg:#f5f7fb; --panel:#ffffff; --ink:#0f172a;
-    --blue:#2563eb; --blue-600:#1e40af;
-    --gray-200:#eef2f7; --gray-300:#e5e7eb; --gray-400:#cbd5e1; --gray-600:#475569;
-    --danger:#dc2626;
-    --shadow:0 10px 24px rgba(15,23,42,.06);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  :root{--bg:#f5f7fb;--panel:#ffffff;--ink:#0f172a;--blue:#2563eb;--blue-600:#1e40af;--gray-300:#e5e7eb;--gray-600:#475569;--danger:#dc2626;--shadow:0 10px 24px rgba(15,23,42,.06)}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   .wrap{max-width:1120px;margin:0 auto;padding:22px}
-  header, footer{background:#fff;border-bottom:1px solid var(--gray-300);box-shadow:var(--shadow)}
-  header .inner, footer .inner{max-width:1120px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
-  .brand{display:flex;align-items:center;gap:12px}
-  .brand .mark{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#60a5fa)}
+  header,footer{background:#fff;border-bottom:1px solid var(--gray-300);box-shadow:var(--shadow)}
+  header .inner,footer .inner{max-width:1120px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:12px}.brand .mark{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#60a5fa)}
   .brand h1{font-size:18px;margin:0;color:var(--blue-600)}
-  footer{border-top:1px solid var(--gray-300);border-bottom:none;margin-top:24px}
-  footer .inner{font-size:13px;color:var(--gray-600)}
+  footer{border-top:1px solid var(--gray-300);border-bottom:none;margin-top:24px}.sub{margin:8px 0 0;color:var(--gray-600)}
   .card{background:var(--panel);border:1px solid var(--gray-300);border-radius:16px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
-  .grid{display:grid;gap:12px;grid-template-columns:1fr}
-  @media(min-width:860px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .grid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:860px){.grid{grid-template-columns:repeat(4,1fr)}}
   label{display:block;font-size:12px;color:var(--gray-600);margin:0 0 6px}
-  .input, select, textarea{width:100%;border:1px solid var(--gray-300);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
-  .input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+  .input,select,textarea{width:100%;border:1px solid var(--gray-300);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
   .controls{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-  .btn{appearance:none;border:1px solid var(--gray-300);background:#eef2ff;color:var(--blue-600);border-radius:10px;font-weight:800;height:44px;cursor:pointer;transition:transform .02s ease, box-shadow .12s ease}
-  .btn:hover{box-shadow:0 6px 14px rgba(0,0,0,.08)}
-  .btn:active{transform:translateY(1px)}
-  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-  .btn.gray{background:#f8fafc;color:var(--ink)}
-  .btn.danger{background:#dc2626;color:#fff;border-color:var(--danger)}
-  .statgrid{display:grid;gap:12px;grid-template-columns:1fr}
-  @media(min-width:720px){.statgrid{grid-template-columns:repeat(3,1fr)}}
-  .tile{border:1px solid var(--gray-300);border-radius:14px;padding:12px;background:#fff}
-  .tile h4{margin:0 0 6px;font-size:12px;color:var(--gray-600);font-weight:700}
-  .tile p{margin:0;font-size:22px;font-weight:900;color:var(--blue-600)}
-  .note{font-size:12px;color:var(--gray-600)}
-  .right{text-align:right}
-  .sub{margin:8px 0 0;color:var(--gray-600)}
+  .btn{appearance:none;border:1px solid var(--gray-300);background:#eef2ff;color:var(--blue-600);border-radius:10px;font-weight:800;height:44px;cursor:pointer}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.gray{background:#f8fafc;color:var(--ink)}.btn.danger{background:#dc2626;color:#fff;border-color:var(--danger)}
+  .statgrid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:720px){.statgrid{grid-template-columns:repeat(3,1fr)}}
+  .tile{border:1px solid var(--gray-300);border-radius:14px;padding:12px;background:#fff}.tile h4{margin:0 0 6px;font-size:12px;color:var(--gray-600);font-weight:700}.tile p{margin:0;font-size:22px;font-weight:900;color:var(--blue-600)}
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--gray-300);border-radius:14px;overflow:hidden}
-  th,td{padding:10px;border-top:1px solid var(--gray-300);font-size:13px}
-  th{background:#eef2ff;text-align:center;color:var(--blue-600)}
-  td{vertical-align:middle}
-  td input, td select, td textarea{width:100%;padding:8px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px}
-  textarea{resize:vertical}
-  .muted{opacity:.7}
-  .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:var(--blue-600);font-weight:700;font-size:12px}
+  th,td{padding:10px;border-top:1px solid var(--gray-300);font-size:13px} th{background:#eef2ff;text-align:center;color:var(--blue-600)} td{vertical-align:middle}
+  td input,td select,td textarea{width:100%;padding:8px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px} textarea{resize:vertical}
+  #err{color:#b91c1c;font-weight:700}
 </style>
 </head>
 <body>
 <header>
   <div class="inner">
-    <div class="brand">
-      <div class="mark" aria-hidden="true"></div>
-      <h1>Shibex XRP Journal <span class="badge">Spot + Futures</span></h1>
-    </div>
+    <div class="brand"><div class="mark"></div><h1>Shibex XRP Journal <span style="font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#1e40af">Spot + Futures</span></h1></div>
     <div style="font-size:13px;color:#334155;">Hosted by <b>Shibex Social</b></div>
   </div>
 </header>
 
 <div class="wrap">
-  <p class="sub"><b id="jscheck">Initializing…</b> • Uniform buttons & inputs • Live PnL/ROI • Local autosave</p>
+  <p class="sub"><b id="jscheck">Initializing… v3.1</b> • <span id="err"></span></p>
 
-  <!-- Global settings -->
   <div class="card grid">
-    <div>
-      <label>USD per 1 XRP (reference)</label>
-      <input id="rate" class="input" type="number" step="0.00001" value="0.52000">
-      <div class="note">Used to convert XRP ⇄ USD for totals.</div>
-    </div>
-    <div>
-      <label>Default Pair</label>
-      <input id="defPair" class="input" type="text" value="XRPUSD">
-    </div>
-    <div>
-      <label>Autosave</label>
-      <select id="autosave" class="input">
-        <option value="on" selected>On (local device)</option>
-        <option value="off">Off</option>
-      </select>
-    </div>
-    <div>
-      <label>Journal Date</label>
-      <input id="jdate" class="input" type="date">
-    </div>
+    <div><label>USD per 1 XRP (reference)</label><input id="rate" class="input" type="number" step="0.00001" value="0.52000"><div class="note">Used to convert XRP ⇄ USD for totals.</div></div>
+    <div><label>Default Pair</label><input id="defPair" class="input" type="text" value="XRPUSD"></div>
+    <div><label>Autosave</label><select id="autosave" class="input"><option value="on" selected>On (local device)</option><option value="off">Off</option></select></div>
+    <div><label>Journal Date</label><input id="jdate" class="input" type="date"></div>
   </div>
 
-  <!-- Balances & actions -->
   <div class="card grid">
     <div><label>Beginning Balance — Spot (XRP)</label><input id="begSpot" class="input" type="number" step="0.000001" value="0"></div>
     <div><label>Beginning Balance — Futures (XRP)</label><input id="begFut" class="input" type="number" step="0.000001" value="0"></div>
     <div><label>Trade Count (auto)</label><input id="tcount" class="input" type="number" value="0" readonly></div>
     <div>
-      <label class="muted">Actions</label>
+      <label>Actions</label>
       <div class="controls">
         <button id="btn-add" class="btn gray">+ Add Trade</button>
         <button id="btn-remove" class="btn gray">– Remove Last</button>
         <button id="btn-download" class="btn primary">Download CSV</button>
-
-        <label class="btn gray" style="cursor:pointer">
-          Load JSON
-          <input id="load" type="file" accept=".json" style="display:none">
-        </label>
-
+        <label class="btn gray" style="cursor:pointer">Load JSON<input id="load" type="file" accept=".json" style="display:none"></label>
         <button id="btn-save" class="btn gray">Save JSON</button>
         <button id="btn-reset" class="btn danger">Reset</button>
       </div>
     </div>
   </div>
 
-  <!-- Totals -->
   <div class="card">
     <div class="statgrid">
       <div class="tile"><h4>Spot PnL (XRP)</h4><p id="spotX">0.000000 XRP</p><div class="note right" id="spotU">≈ $0.00</div></div>
@@ -124,193 +72,174 @@
     <div class="note right" id="ends">Ending — Spot: 0 XRP • Futures: 0 XRP • Combined: 0 XRP</div>
   </div>
 
-  <!-- Trades -->
   <div class="card">
     <table>
-      <thead>
-        <tr>
-          <th>#</th><th>Date</th><th>Type</th><th>Pair</th><th>Dir</th>
-          <th>Qty (XRP)</th><th>Entry (USD)</th><th>Exit (USD)</th><th>Fee (XRP)</th>
-          <th>PnL USD</th><th>PnL XRP</th><th>ROI %</th><th>Notes</th>
-        </tr>
-      </thead>
+      <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Pair</th><th>Dir</th><th>Qty (XRP)</th><th>Entry (USD)</th><th>Exit (USD)</th><th>Fee (XRP)</th><th>PnL USD</th><th>PnL XRP</th><th>ROI %</th><th>Notes</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
-    <p class="note">Type: <b>Spot</b> or <b>Futures</b>. Direction: <b>Long</b> profits if exit &gt; entry; <b>Short</b> profits if exit &lt; entry. PnL XRP = (PnL USD / rate) − fee XRP.</p>
   </div>
 </div>
 
-<footer>
-  <div class="inner">
-    <div>© <span id="yr"></span> Shibex Social — All rights reserved.</div>
-    <div>Powered by <b>Sundrop Ventures</b> • Crafted for the community</div>
-  </div>
-</footer>
+<footer><div class="inner">© <span id="yr"></span> Shibex Social — Powered by Sundrop Ventures</div></footer>
 
 <script>
-  var KEY='shibex_xrp_journal_v3';
-  var rows=[];
+window.onerror=function(msg){var e=document.getElementById('err'); if(e){ e.textContent='JS error: '+msg; }};
 
-  function $(id){return document.getElementById(id)}
-  function today(){return new Date().toISOString().slice(0,10)}
-  function s(dir){return dir==='Short'?-1:1}
-  function setYear(){ var y=document.getElementById('yr'); if(y){ y.textContent=new Date().getFullYear(); } }
+var KEY='shibex_xrp_journal_v3', rows=[];
+function $(id){return document.getElementById(id)}
+function today(){return new Date().toISOString().slice(0,10)}
+function s(dir){return dir==='Short'?-1:1}
+function setYear(){ var y=$('yr'); if(y){ y.textContent=new Date().getFullYear(); } }
 
-  function calc(r, rate){
-    var q=parseFloat(r.qty), en=parseFloat(r.entry), ex=parseFloat(r.exit), fee=parseFloat(r.fee)||0;
-    if(!(isFinite(q)&&isFinite(en)&&isFinite(ex)&&rate>0)) return {usd:null,xrp:null,roi:null};
-    var usd=(ex-en)*q*s(r.dir);
-    var xrp=usd/rate - fee;
-    var not=en*q;
-    var roi=not>0?(usd/not):0;
-    return {usd:usd,xrp:xrp,roi:roi};
+function calc(r, rate){
+  var q=parseFloat(r.qty), en=parseFloat(r.entry), ex=parseFloat(r.exit), fee=parseFloat(r.fee)||0;
+  if(!(isFinite(q)&&isFinite(en)&&isFinite(ex)&&rate>0)) return {usd:null,xrp:null,roi:null};
+  var usd=(ex-en)*q*s(r.dir);
+  var xrp=usd/rate - fee;
+  var not=en*q;
+  var roi=not>0?(usd/not):0;
+  return {usd:usd,xrp:xrp,roi:roi};
+}
+function fmtUSD(n){return isFinite(n)?('$'+n.toFixed(2)) : ''}
+function fmtXRP(n){return isFinite(n)?(n.toFixed(6)+' XRP') : ''}
+function fmtPct(n){return isFinite(n)?((n*100).toFixed(2)+'%') : ''}
+
+function newRow(){
+  return {date:$('jdate').value||today(), type:'Spot', pair:$('defPair').value||'XRPUSD', dir:'Long', qty:'', entry:'', exit:'', fee:'', notes:''};
+}
+
+function render(){
+  var rate=parseFloat($('rate').value)||0;
+  var tb='';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i], c=calc(r, rate);
+    tb += '<tr>'
+      +'<td style="text-align:right">'+(i+1)+'</td>'
+      +'<td><input data-i="'+i+'" data-k="date" type="date" value="'+(r.date||today())+'"></td>'
+      +'<td><select data-i="'+i+'" data-k="type"><option '+(r.type==='Spot'?'selected':'')+'>Spot</option><option '+(r.type==='Futures'?'selected':'')+'>Futures</option></select></td>'
+      +'<td><input data-i="'+i+'" data-k="pair" type="text" value="'+(r.pair||'')+'"></td>'
+      +'<td><select data-i="'+i+'" data-k="dir"><option '+(r.dir==='Long'?'selected':'')+'>Long</option><option '+(r.dir==='Short'?'selected':'')+'>Short</option></select></td>'
+      +'<td><input data-i="'+i+'" data-k="qty" type="number" step="0.000001" value="'+(r.qty||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="entry" type="number" step="0.00001" value="'+(r.entry||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="exit" type="number" step="0.00001" value="'+(r.exit||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="fee" type="number" step="0.000001" value="'+(r.fee||'')+'" placeholder="0"></td>'
+      +'<td style="text-align:right">'+fmtUSD(c.usd)+'</td>'
+      +'<td style="text-align:right">'+fmtXRP(c.xrp)+'</td>'
+      +'<td style="text-align:right">'+fmtPct(c.roi)+'</td>'
+      +'<td><textarea data-i="'+i+'" data-k="notes" rows="1" placeholder="setup, reason…">'+(r.notes||'')+'</textarea></td>'
+      +'</tr>';
   }
-  function fmtUSD(n){return isFinite(n)?('$'+n.toFixed(2)) : ''}
-  function fmtXRP(n){return isFinite(n)?(n.toFixed(6)+' XRP') : ''}
-  function fmtPct(n){return isFinite(n)?((n*100).toFixed(2)+'%') : ''}
+  $('tbody').innerHTML=tb;
 
-  function newRow(){
-    return {date: $('jdate').value||today(), type:'Spot', pair:$('defPair').value||'XRPUSD', dir:'Long', qty:'', entry:'', exit:'', fee:'', notes:''};
+  document.querySelectorAll('#tbody input, #tbody select, #tbody textarea').forEach(function(el){
+    el.addEventListener('input', function(){
+      var i=+el.dataset.i, k=el.dataset.k;
+      rows[i][k]=el.value;
+      var rate=parseFloat($('rate').value)||0;
+      var c=calc(rows[i], rate);
+      var rowEl=el.closest('tr');
+      rowEl.children[9].textContent = fmtUSD(c.usd);
+      rowEl.children[10].textContent= fmtXRP(c.xrp);
+      rowEl.children[11].textContent= fmtPct(c.roi);
+      totals();
+      if($('autosave').value==='on') persist();
+    }, {passive:true});
+  });
+
+  totals();
+  $('tcount').value=rows.length;
+  $('jdate').addEventListener('change', persist);
+  $('rate').addEventListener('input', function(){ render(); });
+  $('defPair').addEventListener('input', persist);
+  $('begSpot').addEventListener('input', function(){ totals(); persist(); });
+  $('begFut').addEventListener('input', function(){ totals(); persist(); });
+
+  if($('autosave').value==='on') persist();
+
+  var jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.1';
+}
+
+function totals(){
+  var rate=parseFloat($('rate').value)||0;
+  var spot=0, fut=0;
+  for(var j=0;j<rows.length;j++){
+    var c=calc(rows[j], rate);
+    if(!isFinite(c.xrp)) continue;
+    if(rows[j].type==='Spot') spot+=c.xrp; else fut+=c.xrp;
   }
+  var bS=parseFloat($('begSpot').value)||0;
+  var bF=parseFloat($('begFut').value)||0;
+  var endS=bS+spot, endF=bF+fut;
 
-  function render(){
-    var rate=parseFloat($('rate').value)||0;
-    var tb='';
-    for(var i=0;i<rows.length;i++){
-      var r=rows[i], c=calc(r, rate);
-      tb += '<tr>'
-        +'<td style="text-align:right">'+(i+1)+'</td>'
-        +'<td><input data-i="'+i+'" data-k="date" type="date" value="'+(r.date||today())+'"></td>'
-        +'<td><select data-i="'+i+'" data-k="type"><option '+(r.type==='Spot'?'selected':'')+'>Spot</option><option '+(r.type==='Futures'?'selected':'')+'>Futures</option></select></td>'
-        +'<td><input data-i="'+i+'" data-k="pair" type="text" value="'+(r.pair||'')+'"></td>'
-        +'<td><select data-i="'+i+'" data-k="dir"><option '+(r.dir==='Long'?'selected':'')+'>Long</option><option '+(r.dir==='Short'?'selected':'')+'>Short</option></select></td>'
-        +'<td><input data-i="'+i+'" data-k="qty" type="number" step="0.000001" value="'+(r.qty||'')+'"></td>'
-        +'<td><input data-i="'+i+'" data-k="entry" type="number" step="0.00001" value="'+(r.entry||'')+'"></td>'
-        +'<td><input data-i="'+i+'" data-k="exit" type="number" step="0.00001" value="'+(r.exit||'')+'"></td>'
-        +'<td><input data-i="'+i+'" data-k="fee" type="number" step="0.000001" value="'+(r.fee||'')+'" placeholder="0"></td>'
-        +'<td style="text-align:right">'+fmtUSD(c.usd)+'</td>'
-        +'<td style="text-align:right">'+fmtXRP(c.xrp)+'</td>'
-        +'<td style="text-align:right">'+fmtPct(c.roi)+'</td>'
-        +'<td><textarea data-i="'+i+'" data-k="notes" rows="1" placeholder="setup, reason…">'+(r.notes||'')+'</textarea></td>'
-        +'</tr>';
-    }
-    $('tbody').innerHTML=tb;
+  $('spotX').textContent=fmtXRP(spot);
+  $('spotU').textContent='≈ '+fmtUSD(spot*rate);
+  $('futX').textContent=fmtXRP(fut);
+  $('futU').textContent='≈ '+fmtUSD(fut*rate);
+  $('allX').textContent=fmtXRP(spot+fut);
+  $('allU').textContent='≈ '+fmtUSD((spot+fut)*rate);
+  $('ends').textContent='Ending — Spot: '+fmtXRP(endS)+' • Futures: '+fmtXRP(endF)+' • Combined: '+fmtXRP(endS+endF);
+}
 
-    // Wire cell changes
-    document.querySelectorAll('#tbody input, #tbody select, #tbody textarea').forEach(function(el){
-      el.addEventListener('input', function(){
-        var i=+el.dataset.i, k=el.dataset.k;
-        rows[i][k]=el.value;
-        // recompute only the row instead of full render to keep cursor position
-        var rate=parseFloat($('rate').value)||0;
-        var c=calc(rows[i], rate);
-        var rowEl=el.closest('tr');
-        rowEl.children[9].textContent = fmtUSD(c.usd);
-        rowEl.children[10].textContent= fmtXRP(c.xrp);
-        rowEl.children[11].textContent= fmtPct(c.roi);
-        totals(); // update totals only
-        if($('autosave').value==='on') persist();
-      }, {passive:true});
-    });
+function persist(){
+  localStorage.setItem(KEY, JSON.stringify({
+    rows:rows, rate:$('rate').value, def:$('defPair').value,
+    bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
+  }));
+}
 
-    totals();
-    $('tcount').value=rows.length;
-    $('jdate').addEventListener('change', persist);
-    $('rate').addEventListener('input', function(){ render(); }); // re-render to recompute
-    $('defPair').addEventListener('input', persist);
-    $('begSpot').addEventListener('input', function(){ totals(); persist(); });
-    $('begFut').addEventListener('input', function(){ totals(); persist(); });
+function addRow(){ rows.push(newRow()); render(); }
+function removeRow(){ rows.pop(); render(); }
+function resetAll(){ if(confirm('Clear all rows and totals?')){ rows=[]; $('begSpot').value='0'; $('begFut').value='0'; render(); } }
 
-    if($('autosave').value==='on') persist();
-
-    var jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline)';
+function downloadCSV(){
+  var rate=parseFloat($('rate').value)||0;
+  var head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','PnL_USD','PnL_XRP','ROI_pct','Notes'];
+  var out=[head.join(',')];
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i], c=calc(r, rate);
+    out.push([
+      i+1,r.date||'',r.type||'',r.pair||'',r.dir||'',
+      r.qty||'',r.entry||'',r.exit||'',r.fee||'',
+      isFinite(c.usd)?c.usd.toFixed(2):'',
+      isFinite(c.xrp)?c.xrp.toFixed(6):'',
+      isFinite(c.roi)?(c.roi*100).toFixed(2):'',
+      '"'+(r.notes||'').replace(/"/g,'""')+'"'
+    ].join(','));
   }
+  var blob=new Blob([out.join('\n')],{type:'text/csv'});
+  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='shibex_xrp_journal.csv'; a.click(); URL.revokeObjectURL(url);
+}
 
-  function totals(){
-    var rate=parseFloat($('rate').value)||0;
-    var spot=0, fut=0;
-    for(var j=0;j<rows.length;j++){
-      var c=calc(rows[j], rate);
-      if(!isFinite(c.xrp)) continue;
-      if(rows[j].type==='Spot') spot+=c.xrp; else fut+=c.xrp;
-    }
-    var bS=parseFloat($('begSpot').value)||0;
-    var bF=parseFloat($('begFut').value)||0;
-    var endS=bS+spot, endF=bF+fut;
+function saveJSON(){
+  var blob=new Blob([JSON.stringify({
+    rows:rows, rate:$('rate').value, def:$('defPair').value,
+    bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
+  },null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='shibex_xrp_journal.json'; a.click(); URL.revokeObjectURL(url);
+}
 
-    $('spotX').textContent=fmtXRP(spot);
-    $('spotU').textContent='≈ '+fmtUSD(spot*rate);
-    $('futX').textContent=fmtXRP(fut);
-    $('futU').textContent='≈ '+fmtUSD(fut*rate);
-    $('allX').textContent=fmtXRP(spot+fut);
-    $('allU').textContent='≈ '+fmtUSD((spot+fut)*rate);
-    $('ends').textContent='Ending — Spot: '+fmtXRP(endS)+' • Futures: '+fmtXRP(endF)+' • Combined: '+fmtXRP(endS+endF);
-  }
+function loadJSON(inp){
+  var f=inp.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      rows=Array.isArray(d.rows)?d.rows:[];
+      if(d.rate) $('rate').value=d.rate;
+      if(d.def)  $('defPair').value=d.def;
+      if(d.bS)   $('begSpot').value=d.bS;
+      if(d.bF)   $('begFut').value=d.bF;
+      if(d.d)    $('jdate').value=d.d;
+      render();
+    }catch(e){ alert('Invalid JSON file.'); }
+  };
+  r.readAsText(f); inp.value='';
+}
 
-  function persist(){
-    localStorage.setItem(KEY, JSON.stringify({
-      rows:rows, rate:$('rate').value, def:$('defPair').value,
-      bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
-    }));
-  }
-
-  function addRow(){ rows.push(newRow()); render(); }
-  function removeRow(){ rows.pop(); render(); }
-  function resetAll(){
-    if(confirm('Clear all rows and totals?')){
-      rows=[]; $('begSpot').value='0'; $('begFut').value='0'; render();
-    }
-  }
-
-  function downloadCSV(){
-    var rate=parseFloat($('rate').value)||0;
-    var head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','PnL_USD','PnL_XRP','ROI_pct','Notes'];
-    var out=[head.join(',')];
-    for(var i=0;i<rows.length;i++){
-      var r=rows[i], c=calc(r, rate);
-      out.push([
-        i+1,r.date||'',r.type||'',r.pair||'',r.dir||'',
-        r.qty||'',r.entry||'',r.exit||'',r.fee||'',
-        isFinite(c.usd)?c.usd.toFixed(2):'',
-        isFinite(c.xrp)?c.xrp.toFixed(6):'',
-        isFinite(c.roi)?(c.roi*100).toFixed(2):'',
-        '"'+(r.notes||'').replace(/"/g,'""')+'"'
-      ].join(','));
-    }
-    var blob=new Blob([out.join('\n')],{type:'text/csv'});
-    var url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='shibex_xrp_journal.csv'; a.click(); URL.revokeObjectURL(url);
-  }
-
-  function saveJSON(){
-    var blob=new Blob([JSON.stringify({
-      rows:rows, rate:$('rate').value, def:$('defPair').value,
-      bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
-    },null,2)],{type:'application/json'});
-    var url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='shibex_xrp_journal.json'; a.click(); URL.revokeObjectURL(url);
-  }
-
-  function loadJSON(inp){
-    var f=inp.files[0]; if(!f) return;
-    var r=new FileReader();
-    r.onload=function(){
-      try{
-        var d=JSON.parse(r.result);
-        rows=Array.isArray(d.rows)?d.rows:[];
-        if(d.rate) $('rate').value=d.rate;
-        if(d.def)  $('defPair').value=d.def;
-        if(d.bS)   $('begSpot').value=d.bS;
-        if(d.bF)   $('begFut').value=d.bF;
-        if(d.d)    $('jdate').value=d.d;
-        render();
-      }catch(e){ alert('Invalid JSON file.'); }
-    };
-    r.readAsText(f); inp.value='';
-  }
-
-  // Wire top buttons (IDs) once DOM is ready
-  document.addEventListener('DOMContentLoaded', function(){
+function boot(){
+  try{
     setYear();
     $('jdate').value=today();
     var s=localStorage.getItem(KEY);
@@ -327,7 +256,6 @@
     }else{
       rows=[newRow()];
     }
-    // Buttons
     $('btn-add').addEventListener('click', addRow);
     $('btn-remove').addEventListener('click', removeRow);
     $('btn-download').addEventListener('click', downloadCSV);
@@ -335,7 +263,12 @@
     $('btn-reset').addEventListener('click', resetAll);
     $('load').addEventListener('change', function(){ loadJSON(this); });
     render();
-  });
+  }catch(e){
+    var er=$('err'); if(er){ er.textContent='Boot error: '+ e.message; }
+  }
+}
+document.addEventListener('DOMContentLoaded', boot);
+window.addEventListener('load', function(){ if(!$('tbody').children.length){ boot(); }});
 </script>
 </body>
 </html>
