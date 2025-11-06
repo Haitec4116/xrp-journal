@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Shibex XRP Journal — Spot & Futures</title>
+<title>Shibex XRP Journal — Spot & Futures (with Leverage)</title>
 <style>
   :root{--bg:#f5f7fb;--panel:#ffffff;--ink:#0f172a;--blue:#2563eb;--blue-600:#1e40af;--gray-300:#e5e7eb;--gray-600:#475569;--danger:#dc2626;--shadow:0 10px 24px rgba(15,23,42,.06)}
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -16,7 +16,7 @@
   .card{background:var(--panel);border:1px solid var(--gray-300);border-radius:16px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
   .grid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:860px){.grid{grid-template-columns:repeat(4,1fr)}}
   label{display:block;font-size:12px;color:var(--gray-600);margin:0 0 6px}
-  .input,select,textarea{width:100%;border:1px solid var(--gray-300);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
+  .input,select{width:100%;border:1px solid var(--gray-300);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
   .controls{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
   .btn{appearance:none;border:1px solid var(--gray-300);background:#eef2ff;color:var(--blue-600);border-radius:10px;font-weight:800;height:44px;cursor:pointer}
   .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.gray{background:#f8fafc;color:var(--ink)}.btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -24,7 +24,7 @@
   .tile{border:1px solid var(--gray-300);border-radius:14px;padding:12px;background:#fff}.tile h4{margin:0 0 6px;font-size:12px;color:var(--gray-600);font-weight:700}.tile p{margin:0;font-size:22px;font-weight:900;color:var(--blue-600)}
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--gray-300);border-radius:14px;overflow:hidden}
   th,td{padding:10px;border-top:1px solid var(--gray-300);font-size:13px} th{background:#eef2ff;text-align:center;color:var(--blue-600)} td{vertical-align:middle}
-  td input,td select,td textarea{width:100%;padding:8px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px} textarea{resize:vertical}
+  td input,td select{width:100%;padding:8px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px}
   #err{color:#b91c1c;font-weight:700}
 </style>
 </head>
@@ -37,7 +37,7 @@
 </header>
 
 <div class="wrap">
-  <p class="sub"><b id="jscheck">Initializing… v3.3</b> • <span id="err"></span></p>
+  <p class="sub"><b id="jscheck">Initializing… v3.4</b> • <span id="err"></span></p>
 
   <div class="card grid">
     <div><label>USD per 1 XRP (reference)</label><input id="rate" class="input" type="number" step="0.00001" value="0.52000"><div class="note">Used to convert XRP ⇄ USD for totals.</div></div>
@@ -74,7 +74,14 @@
 
   <div class="card">
     <table>
-      <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Pair</th><th>Dir</th><th>Qty (XRP)</th><th>Entry (USD)</th><th>Exit (USD)</th><th>Fee (XRP)</th><th>PnL USD</th><th>PnL XRP</th><th>ROI %</th><th>Notes</th></tr></thead>
+      <thead>
+        <tr>
+          <th>#</th><th>Date</th><th>Type</th><th>Pair</th><th>Dir</th>
+          <th>Qty (XRP)</th><th>Entry (USD)</th><th>Exit (USD)</th><th>Fee (XRP)</th>
+          <th>Lev (×)</th><th>Margin (XRP)</th>
+          <th>PnL USD</th><th>PnL XRP</th><th>ROI %</th>
+        </tr>
+      </thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -87,34 +94,45 @@
 window.onerror=function(msg){var e=document.getElementById('err'); if(e){ e.textContent='JS error: '+msg; }};
 
 /* ---------- Utilities ---------- */
-var KEY='shibex_xrp_journal_v3', rows=[];
+var KEY='shibex_xrp_journal_v4', rows=[];
 function $(id){return document.getElementById(id)}
 function today(){return new Date().toISOString().slice(0,10)}
 function s(dir){return dir==='Short'?-1:1}
 function setYear(){ var y=$('yr'); if(y){ y.textContent=new Date().getFullYear(); } }
-
-/* Safe number conversion + safe formatters (no toFixed on null/undefined) */
 function num(n){ const x = Number(n); return Number.isFinite(x) ? x : null; }
 function fmtUSD(n){ const x=num(n); return x===null?'':('$'+x.toFixed(2)); }
 function fmtXRP(n){ const x=num(n); return x===null?'':(x.toFixed(6)+' XRP'); }
 function fmtPct(n){ const x=num(n); return x===null?'':((x*100).toFixed(2)+'%'); }
 
-/* PnL/ROI calculation (returns nulls if inputs incomplete) */
+/* PnL/ROI calculation */
 function calc(r, rate){
   const q   = num(r.qty);
   const en  = num(r.entry);
   const ex  = num(r.exit);
   const fee = num(r.fee) ?? 0;
-  if (q===null || en===null || ex===null || !(rate>0)) return {usd:null,xrp:null,roi:null};
+  const lev = (r.type==='Futures') ? (num(r.lev) || 1) : 1;
+  if (q===null || en===null || ex===null || !(rate>0)) return {usd:null,xrp:null,roi:null,margin:null};
+
   const usd = (ex - en) * q * s(r.dir);
   const xrp = usd / rate - fee;
-  const notional = en * q;
-  const roi = notional > 0 ? (usd / notional) : 0;
-  return {usd, xrp, roi};
+
+  // Spot ROI on notional; Futures ROI on margin
+  const notionalUSD = en * q;
+  const marginUSD   = (r.type==='Futures') ? (notionalUSD / Math.max(lev,1)) : null;
+  const baseUSD     = (r.type==='Futures') ? marginUSD : notionalUSD;
+  const roi         = (baseUSD && baseUSD>0) ? (usd / baseUSD) : 0;
+
+  const marginXRP   = (r.type==='Futures' && marginUSD!==null) ? (marginUSD / rate) : null;
+
+  return {usd, xrp, roi, marginXRP};
 }
 
 function newRow(){
-  return {date:$('jdate').value||today(), type:'Spot', pair:$('defPair').value||'XRPUSD', dir:'Long', qty:'', entry:'', exit:'', fee:'', notes:''};
+  return {
+    date:$('jdate').value||today(),
+    type:'Spot', pair:$('defPair').value||'XRPUSD', dir:'Long',
+    qty:'', entry:'', exit:'', fee:'', lev:'1'
+  };
 }
 
 /* ---------- Render table + bind listeners ---------- */
@@ -123,34 +141,38 @@ function render(){
   let html='';
   for(let i=0;i<rows.length;i++){
     const r = rows[i], c = calc(r, rate);
+
     html += '<tr>'
       +'<td style="text-align:right">'+(i+1)+'</td>'
       +'<td><input data-i="'+i+'" data-k="date" type="date" value="'+(r.date||today())+'"></td>'
       +'<td><select data-i="'+i+'" data-k="type"><option '+(r.type==='Spot'?'selected':'')+'>Spot</option><option '+(r.type==='Futures'?'selected':'')+'>Futures</option></select></td>'
       +'<td><input data-i="'+i+'" data-k="pair" type="text" value="'+(r.pair||'')+'"></td>'
       +'<td><select data-i="'+i+'" data-k="dir"><option '+(r.dir==='Long'?'selected':'')+'>Long</option><option '+(r.dir==='Short'?'selected':'')+'>Short</option></select></td>'
-      +'<td><input data-i="'+i+'" data-k="qty" type="number" step="0.000001" value="'+(r.qty||'')+'"></td>'
-      +'<td><input data-i="'+i+'" data-k="entry" type="number" step="0.00001" value="'+(r.entry||'')+'"></td>'
-      +'<td><input data-i="'+i+'" data-k="exit"  type="number" step="0.00001" value="'+(r.exit||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="qty"   type="number" step="0.000001" value="'+(r.qty||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="entry" type="number" step="0.00001"  value="'+(r.entry||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="exit"  type="number" step="0.00001"  value="'+(r.exit||'')+'"></td>'
       +'<td><input data-i="'+i+'" data-k="fee"   type="number" step="0.000001" value="'+(r.fee||'')+'" placeholder="0"></td>'
+      +'<td><input data-i="'+i+'" data-k="lev"   type="number" step="1" min="1" max="125" value="'+(r.lev||'1')+'"></td>'
+      +'<td style="text-align:right">'+(r.type==='Futures' ? fmtXRP(c.marginXRP) : '')+'</td>'
       +'<td style="text-align:right">'+fmtUSD(c.usd)+'</td>'
       +'<td style="text-align:right">'+fmtXRP(c.xrp)+'</td>'
       +'<td style="text-align:right">'+fmtPct(c.roi)+'</td>'
-      +'<td><textarea data-i="'+i+'" data-k="notes" rows="1" placeholder="setup, reason…">'+(r.notes||'')+'</textarea></td>'
       +'</tr>';
   }
   $('tbody').innerHTML = html;
 
-  document.querySelectorAll('#tbody input, #tbody select, #tbody textarea').forEach(el=>{
+  document.querySelectorAll('#tbody input, #tbody select').forEach(el=>{
     el.addEventListener('input', ()=>{
       const i = +el.dataset.i, k = el.dataset.k;
       rows[i][k] = el.value;
       const c = calc(rows[i], num($('rate').value)||0);
       const rowEl = el.closest('tr');
       if(rowEl){
-        rowEl.children[9].textContent  = fmtUSD(c.usd);
-        rowEl.children[10].textContent = fmtXRP(c.xrp);
-        rowEl.children[11].textContent = fmtPct(c.roi);
+        // columns: 0..14; margin at 10, PnL USD at 11, PnL XRP at 12, ROI at 13
+        rowEl.children[10].textContent = (rows[i].type==='Futures') ? fmtXRP(c.marginXRP) : '';
+        rowEl.children[11].textContent = fmtUSD(c.usd);
+        rowEl.children[12].textContent = fmtXRP(c.xrp);
+        rowEl.children[13].textContent = fmtPct(c.roi);
       }
       totals();
       if($('autosave').value==='on') persist();
@@ -168,7 +190,7 @@ function render(){
 
   if($('autosave').value==='on') persist();
 
-  const jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.3';
+  const jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.4';
 }
 
 /* ---------- Totals ---------- */
@@ -193,32 +215,31 @@ function totals(){
   $('ends').textContent  = 'Ending — Spot: ' + fmtXRP(endS) + ' • Futures: ' + fmtXRP(endF) + ' • Combined: ' + fmtXRP(endS+endF);
 }
 
-/* ---------- Persistence ---------- */
+/* ---------- Persistence & actions ---------- */
 function persist(){
   localStorage.setItem(KEY, JSON.stringify({
     rows, rate:$('rate').value, def:$('defPair').value,
     bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
   }));
 }
-
-/* ---------- Actions ---------- */
 function addRow(){ rows.push(newRow()); render(); }
 function removeRow(){ rows.pop(); render(); }
 function resetAll(){ if(confirm('Clear all rows and totals?')){ rows=[]; $('begSpot').value='0'; $('begFut').value='0'; render(); } }
 
 function downloadCSV(){
   const rate = num($('rate').value) || 0;
-  const head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','PnL_USD','PnL_XRP','ROI_pct','Notes'];
+  const head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','Lev_x','Margin_XRP','PnL_USD','PnL_XRP','ROI_pct'];
   const out=[head.join(',')];
   for(let i=0;i<rows.length;i++){
     const r=rows[i], c=calc(r, rate);
     out.push([
       i+1, r.date||'', r.type||'', r.pair||'', r.dir||'',
       r.qty||'', r.entry||'', r.exit||'', r.fee||'',
+      r.lev||'1',
+      (r.type==='Futures' && c.marginXRP!==null) ? c.marginXRP.toFixed(6) : '',
       c.usd===null ? '' : c.usd.toFixed(2),
       c.xrp===null ? '' : c.xrp.toFixed(6),
-      c.roi===null ? '' : (c.roi*100).toFixed(2),
-      '"'+(r.notes||'').replace(/"/g,'""')+'"'
+      c.roi===null ? '' : (c.roi*100).toFixed(2)
     ].join(','));
   }
   const blob=new Blob([out.join('\n')],{type:'text/csv'});
@@ -234,7 +255,6 @@ function saveJSON(){
   const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download='shibex_xrp_journal.json'; a.click(); URL.revokeObjectURL(url);
 }
-
 function loadJSON(inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
