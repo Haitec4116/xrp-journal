@@ -23,8 +23,38 @@
   .statgrid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:720px){.statgrid{grid-template-columns:repeat(3,1fr)}}
   .tile{border:1px solid var(--gray-300);border-radius:14px;padding:12px;background:#fff}.tile h4{margin:0 0 6px;font-size:12px;color:var(--gray-600);font-weight:700}.tile p{margin:0;font-size:22px;font-weight:900;color:var(--blue-600)}
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--gray-300);border-radius:14px;overflow:hidden}
-  th,td{padding:10px;border-top:1px solid var(--gray-300);font-size:13px} th{background:#eef2ff;text-align:center;color:var(--blue-600)} td{vertical-align:middle}
-  td input,td select{width:100%;padding:8px;border:1px solid var(--gray-300);border-radius:8px;font-size:13px}
+
+  /* =========================
+     Roomier table & inputs
+     ========================= */
+  table { table-layout: fixed; }          /* keep columns steady */
+  th, td { padding:10px; border-top:1px solid var(--gray-300); font-size:13px; word-wrap:break-word }
+  th{background:#eef2ff;text-align:center;color:var(--blue-600)}
+  td{vertical-align:middle}
+  td input, td select{
+    width:95%;               /* breathing room inside cell */
+    padding:10px;            /* slightly bigger touch target */
+    font-size:13px;
+    border:1px solid var(--gray-300);
+    border-radius:8px;
+    background:#fff;
+  }
+  /* Column widths tuned for readability on desktop */
+  th:nth-child(1)  { width: 4%; }   /* # */
+  th:nth-child(2)  { width:11%; }   /* Date */
+  th:nth-child(3)  { width: 9%; }   /* Type */
+  th:nth-child(4)  { width:11%; }   /* Pair */
+  th:nth-child(5)  { width: 8%; }   /* Dir */
+  th:nth-child(6)  { width:10%; }   /* Qty */
+  th:nth-child(7)  { width:10%; }   /* Entry */
+  th:nth-child(8)  { width:10%; }   /* Exit */
+  th:nth-child(9)  { width: 8%; }   /* Fee */
+  th:nth-child(10) { width: 7%; }   /* Lev */
+  th:nth-child(11) { width:10%; }   /* Margin */
+  th:nth-child(12) { width:10%; }   /* PnL USD */
+  th:nth-child(13) { width:10%; }   /* PnL XRP */
+  th:nth-child(14) { width: 8%; }   /* ROI */
+
   #err{color:#b91c1c;font-weight:700}
 </style>
 </head>
@@ -37,7 +67,7 @@
 </header>
 
 <div class="wrap">
-  <p class="sub"><b id="jscheck">Initializing… v3.4</b> • <span id="err"></span></p>
+  <p class="sub"><b id="jscheck">Initializing… v3.5</b> • <span id="err"></span></p>
 
   <div class="card grid">
     <div><label>USD per 1 XRP (reference)</label><input id="rate" class="input" type="number" step="0.00001" value="0.52000"><div class="note">Used to convert XRP ⇄ USD for totals.</div></div>
@@ -90,11 +120,11 @@
 <footer><div class="inner">© <span id="yr"></span> Shibex Social — Powered by Sundrop Ventures</div></footer>
 
 <script>
-/* ---------- Error banner so we can see issues on-page ---------- */
+/* Error banner */
 window.onerror=function(msg){var e=document.getElementById('err'); if(e){ e.textContent='JS error: '+msg; }};
 
-/* ---------- Utilities ---------- */
-var KEY='shibex_xrp_journal_v4', rows=[];
+/* Utilities */
+var KEY='shibex_xrp_journal_v5', rows=[];
 function $(id){return document.getElementById(id)}
 function today(){return new Date().toISOString().slice(0,10)}
 function s(dir){return dir==='Short'?-1:1}
@@ -104,19 +134,18 @@ function fmtUSD(n){ const x=num(n); return x===null?'':('$'+x.toFixed(2)); }
 function fmtXRP(n){ const x=num(n); return x===null?'':(x.toFixed(6)+' XRP'); }
 function fmtPct(n){ const x=num(n); return x===null?'':((x*100).toFixed(2)+'%'); }
 
-/* PnL/ROI calculation */
+/* PnL/ROI calc (leverage affects margin & ROI for Futures) */
 function calc(r, rate){
   const q   = num(r.qty);
   const en  = num(r.entry);
   const ex  = num(r.exit);
   const fee = num(r.fee) ?? 0;
   const lev = (r.type==='Futures') ? (num(r.lev) || 1) : 1;
-  if (q===null || en===null || ex===null || !(rate>0)) return {usd:null,xrp:null,roi:null,margin:null};
+  if (q===null || en===null || ex===null || !(rate>0)) return {usd:null,xrp:null,roi:null,marginXRP:null};
 
   const usd = (ex - en) * q * s(r.dir);
   const xrp = usd / rate - fee;
 
-  // Spot ROI on notional; Futures ROI on margin
   const notionalUSD = en * q;
   const marginUSD   = (r.type==='Futures') ? (notionalUSD / Math.max(lev,1)) : null;
   const baseUSD     = (r.type==='Futures') ? marginUSD : notionalUSD;
@@ -135,13 +164,12 @@ function newRow(){
   };
 }
 
-/* ---------- Render table + bind listeners ---------- */
+/* Render table + listeners */
 function render(){
   const rate = num($('rate').value) || 0;
   let html='';
   for(let i=0;i<rows.length;i++){
     const r = rows[i], c = calc(r, rate);
-
     html += '<tr>'
       +'<td style="text-align:right">'+(i+1)+'</td>'
       +'<td><input data-i="'+i+'" data-k="date" type="date" value="'+(r.date||today())+'"></td>'
@@ -168,7 +196,6 @@ function render(){
       const c = calc(rows[i], num($('rate').value)||0);
       const rowEl = el.closest('tr');
       if(rowEl){
-        // columns: 0..14; margin at 10, PnL USD at 11, PnL XRP at 12, ROI at 13
         rowEl.children[10].textContent = (rows[i].type==='Futures') ? fmtXRP(c.marginXRP) : '';
         rowEl.children[11].textContent = fmtUSD(c.usd);
         rowEl.children[12].textContent = fmtXRP(c.xrp);
@@ -190,10 +217,10 @@ function render(){
 
   if($('autosave').value==='on') persist();
 
-  const jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.4';
+  const jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.5';
 }
 
-/* ---------- Totals ---------- */
+/* Totals */
 function totals(){
   const rate = num($('rate').value) || 0;
   let spot=0, fut=0;
@@ -215,7 +242,7 @@ function totals(){
   $('ends').textContent  = 'Ending — Spot: ' + fmtXRP(endS) + ' • Futures: ' + fmtXRP(endF) + ' • Combined: ' + fmtXRP(endS+endF);
 }
 
-/* ---------- Persistence & actions ---------- */
+/* Persistence & actions */
 function persist(){
   localStorage.setItem(KEY, JSON.stringify({
     rows, rate:$('rate').value, def:$('defPair').value,
@@ -273,7 +300,7 @@ function loadJSON(inp){
   r.readAsText(f); inp.value='';
 }
 
-/* ---------- Boot ---------- */
+/* Boot */
 function boot(){
   try{
     setYear && setYear();
