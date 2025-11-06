@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Shibex XRP Journal — Spot & Futures (Patched)</title>
+<title>Shibex XRP Journal — Spot & Futures</title>
 <style>
   :root{--bg:#f5f7fb;--panel:#ffffff;--ink:#0f172a;--blue:#2563eb;--blue-600:#1e40af;--gray-300:#e5e7eb;--gray-600:#475569;--danger:#dc2626;--shadow:0 10px 24px rgba(15,23,42,.06)}
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -19,7 +19,7 @@
   .input,select,textarea{width:100%;border:1px solid var(--gray-300);background:#fff;border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
   .controls{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
   .btn{appearance:none;border:1px solid var(--gray-300);background:#eef2ff;color:var(--blue-600);border-radius:10px;font-weight:800;height:44px;cursor:pointer}
-  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.gray{background:#f8fafc;color:var(--ink)}.btn.danger{background:#dc2626;color:#fff;border-color:var(--danger)}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.gray{background:#f8fafc;color:var(--ink)}.btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
   .statgrid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:720px){.statgrid{grid-template-columns:repeat(3,1fr)}}
   .tile{border:1px solid var(--gray-300);border-radius:14px;padding:12px;background:#fff}.tile h4{margin:0 0 6px;font-size:12px;color:var(--gray-600);font-weight:700}.tile p{margin:0;font-size:22px;font-weight:900;color:var(--blue-600)}
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--gray-300);border-radius:14px;overflow:hidden}
@@ -37,7 +37,7 @@
 </header>
 
 <div class="wrap">
-  <p class="sub"><b id="jscheck">Initializing… v3.1</b> • <span id="err"></span></p>
+  <p class="sub"><b id="jscheck">Initializing… v3.3</b> • <span id="err"></span></p>
 
   <div class="card grid">
     <div><label>USD per 1 XRP (reference)</label><input id="rate" class="input" type="number" step="0.00001" value="0.52000"><div class="note">Used to convert XRP ⇄ USD for totals.</div></div>
@@ -83,37 +83,47 @@
 <footer><div class="inner">© <span id="yr"></span> Shibex Social — Powered by Sundrop Ventures</div></footer>
 
 <script>
+/* ---------- Error banner so we can see issues on-page ---------- */
 window.onerror=function(msg){var e=document.getElementById('err'); if(e){ e.textContent='JS error: '+msg; }};
 
+/* ---------- Utilities ---------- */
 var KEY='shibex_xrp_journal_v3', rows=[];
 function $(id){return document.getElementById(id)}
 function today(){return new Date().toISOString().slice(0,10)}
 function s(dir){return dir==='Short'?-1:1}
 function setYear(){ var y=$('yr'); if(y){ y.textContent=new Date().getFullYear(); } }
 
+/* Safe number conversion + safe formatters (no toFixed on null/undefined) */
+function num(n){ const x = Number(n); return Number.isFinite(x) ? x : null; }
+function fmtUSD(n){ const x=num(n); return x===null?'':('$'+x.toFixed(2)); }
+function fmtXRP(n){ const x=num(n); return x===null?'':(x.toFixed(6)+' XRP'); }
+function fmtPct(n){ const x=num(n); return x===null?'':((x*100).toFixed(2)+'%'); }
+
+/* PnL/ROI calculation (returns nulls if inputs incomplete) */
 function calc(r, rate){
-  var q=parseFloat(r.qty), en=parseFloat(r.entry), ex=parseFloat(r.exit), fee=parseFloat(r.fee)||0;
-  if(!(isFinite(q)&&isFinite(en)&&isFinite(ex)&&rate>0)) return {usd:null,xrp:null,roi:null};
-  var usd=(ex-en)*q*s(r.dir);
-  var xrp=usd/rate - fee;
-  var not=en*q;
-  var roi=not>0?(usd/not):0;
-  return {usd:usd,xrp:xrp,roi:roi};
+  const q   = num(r.qty);
+  const en  = num(r.entry);
+  const ex  = num(r.exit);
+  const fee = num(r.fee) ?? 0;
+  if (q===null || en===null || ex===null || !(rate>0)) return {usd:null,xrp:null,roi:null};
+  const usd = (ex - en) * q * s(r.dir);
+  const xrp = usd / rate - fee;
+  const notional = en * q;
+  const roi = notional > 0 ? (usd / notional) : 0;
+  return {usd, xrp, roi};
 }
-function fmtUSD(n){return isFinite(n)?('$'+n.toFixed(2)) : ''}
-function fmtXRP(n){return isFinite(n)?(n.toFixed(6)+' XRP') : ''}
-function fmtPct(n){return isFinite(n)?((n*100).toFixed(2)+'%') : ''}
 
 function newRow(){
   return {date:$('jdate').value||today(), type:'Spot', pair:$('defPair').value||'XRPUSD', dir:'Long', qty:'', entry:'', exit:'', fee:'', notes:''};
 }
 
+/* ---------- Render table + bind listeners ---------- */
 function render(){
-  var rate=parseFloat($('rate').value)||0;
-  var tb='';
-  for(var i=0;i<rows.length;i++){
-    var r=rows[i], c=calc(r, rate);
-    tb += '<tr>'
+  const rate = num($('rate').value) || 0;
+  let html='';
+  for(let i=0;i<rows.length;i++){
+    const r = rows[i], c = calc(r, rate);
+    html += '<tr>'
       +'<td style="text-align:right">'+(i+1)+'</td>'
       +'<td><input data-i="'+i+'" data-k="date" type="date" value="'+(r.date||today())+'"></td>'
       +'<td><select data-i="'+i+'" data-k="type"><option '+(r.type==='Spot'?'selected':'')+'>Spot</option><option '+(r.type==='Futures'?'selected':'')+'>Futures</option></select></td>'
@@ -121,112 +131,117 @@ function render(){
       +'<td><select data-i="'+i+'" data-k="dir"><option '+(r.dir==='Long'?'selected':'')+'>Long</option><option '+(r.dir==='Short'?'selected':'')+'>Short</option></select></td>'
       +'<td><input data-i="'+i+'" data-k="qty" type="number" step="0.000001" value="'+(r.qty||'')+'"></td>'
       +'<td><input data-i="'+i+'" data-k="entry" type="number" step="0.00001" value="'+(r.entry||'')+'"></td>'
-      +'<td><input data-i="'+i+'" data-k="exit" type="number" step="0.00001" value="'+(r.exit||'')+'"></td>'
-      +'<td><input data-i="'+i+'" data-k="fee" type="number" step="0.000001" value="'+(r.fee||'')+'" placeholder="0"></td>'
+      +'<td><input data-i="'+i+'" data-k="exit"  type="number" step="0.00001" value="'+(r.exit||'')+'"></td>'
+      +'<td><input data-i="'+i+'" data-k="fee"   type="number" step="0.000001" value="'+(r.fee||'')+'" placeholder="0"></td>'
       +'<td style="text-align:right">'+fmtUSD(c.usd)+'</td>'
       +'<td style="text-align:right">'+fmtXRP(c.xrp)+'</td>'
       +'<td style="text-align:right">'+fmtPct(c.roi)+'</td>'
       +'<td><textarea data-i="'+i+'" data-k="notes" rows="1" placeholder="setup, reason…">'+(r.notes||'')+'</textarea></td>'
       +'</tr>';
   }
-  $('tbody').innerHTML=tb;
+  $('tbody').innerHTML = html;
 
-  document.querySelectorAll('#tbody input, #tbody select, #tbody textarea').forEach(function(el){
-    el.addEventListener('input', function(){
-      var i=+el.dataset.i, k=el.dataset.k;
-      rows[i][k]=el.value;
-      var rate=parseFloat($('rate').value)||0;
-      var c=calc(rows[i], rate);
-      var rowEl=el.closest('tr');
-      rowEl.children[9].textContent = fmtUSD(c.usd);
-      rowEl.children[10].textContent= fmtXRP(c.xrp);
-      rowEl.children[11].textContent= fmtPct(c.roi);
+  document.querySelectorAll('#tbody input, #tbody select, #tbody textarea').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = +el.dataset.i, k = el.dataset.k;
+      rows[i][k] = el.value;
+      const c = calc(rows[i], num($('rate').value)||0);
+      const rowEl = el.closest('tr');
+      if(rowEl){
+        rowEl.children[9].textContent  = fmtUSD(c.usd);
+        rowEl.children[10].textContent = fmtXRP(c.xrp);
+        rowEl.children[11].textContent = fmtPct(c.roi);
+      }
       totals();
       if($('autosave').value==='on') persist();
     }, {passive:true});
   });
 
   totals();
-  $('tcount').value=rows.length;
+  $('tcount').value = rows.length;
+
   $('jdate').addEventListener('change', persist);
-  $('rate').addEventListener('input', function(){ render(); });
+  $('rate').addEventListener('input', ()=> render());
   $('defPair').addEventListener('input', persist);
-  $('begSpot').addEventListener('input', function(){ totals(); persist(); });
-  $('begFut').addEventListener('input', function(){ totals(); persist(); });
+  $('begSpot').addEventListener('input', ()=>{ totals(); persist(); });
+  $('begFut').addEventListener('input', ()=>{ totals(); persist(); });
 
   if($('autosave').value==='on') persist();
 
-  var jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.1';
+  const jc=$('jscheck'); if(jc) jc.textContent='✅ JavaScript is running (inline) v3.3';
 }
 
+/* ---------- Totals ---------- */
 function totals(){
-  var rate=parseFloat($('rate').value)||0;
-  var spot=0, fut=0;
-  for(var j=0;j<rows.length;j++){
-    var c=calc(rows[j], rate);
-    if(!isFinite(c.xrp)) continue;
-    if(rows[j].type==='Spot') spot+=c.xrp; else fut+=c.xrp;
+  const rate = num($('rate').value) || 0;
+  let spot=0, fut=0;
+  for(let j=0;j<rows.length;j++){
+    const c = calc(rows[j], rate);
+    if (c.xrp===null) continue;
+    if (rows[j].type==='Spot') spot+=c.xrp; else fut+=c.xrp;
   }
-  var bS=parseFloat($('begSpot').value)||0;
-  var bF=parseFloat($('begFut').value)||0;
-  var endS=bS+spot, endF=bF+fut;
+  const bS = num($('begSpot').value) || 0;
+  const bF = num($('begFut').value) || 0;
+  const endS=bS+spot, endF=bF+fut;
 
-  $('spotX').textContent=fmtXRP(spot);
-  $('spotU').textContent='≈ '+fmtUSD(spot*rate);
-  $('futX').textContent=fmtXRP(fut);
-  $('futU').textContent='≈ '+fmtUSD(fut*rate);
-  $('allX').textContent=fmtXRP(spot+fut);
-  $('allU').textContent='≈ '+fmtUSD((spot+fut)*rate);
-  $('ends').textContent='Ending — Spot: '+fmtXRP(endS)+' • Futures: '+fmtXRP(endF)+' • Combined: '+fmtXRP(endS+endF);
+  $('spotX').textContent = fmtXRP(spot);
+  $('spotU').textContent = '≈ ' + fmtUSD(spot*rate);
+  $('futX').textContent  = fmtXRP(fut);
+  $('futU').textContent  = '≈ ' + fmtUSD(fut*rate);
+  $('allX').textContent  = fmtXRP(spot+fut);
+  $('allU').textContent  = '≈ ' + fmtUSD((spot+fut)*rate);
+  $('ends').textContent  = 'Ending — Spot: ' + fmtXRP(endS) + ' • Futures: ' + fmtXRP(endF) + ' • Combined: ' + fmtXRP(endS+endF);
 }
 
+/* ---------- Persistence ---------- */
 function persist(){
   localStorage.setItem(KEY, JSON.stringify({
-    rows:rows, rate:$('rate').value, def:$('defPair').value,
+    rows, rate:$('rate').value, def:$('defPair').value,
     bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
   }));
 }
 
+/* ---------- Actions ---------- */
 function addRow(){ rows.push(newRow()); render(); }
 function removeRow(){ rows.pop(); render(); }
 function resetAll(){ if(confirm('Clear all rows and totals?')){ rows=[]; $('begSpot').value='0'; $('begFut').value='0'; render(); } }
 
 function downloadCSV(){
-  var rate=parseFloat($('rate').value)||0;
-  var head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','PnL_USD','PnL_XRP','ROI_pct','Notes'];
-  var out=[head.join(',')];
-  for(var i=0;i<rows.length;i++){
-    var r=rows[i], c=calc(r, rate);
+  const rate = num($('rate').value) || 0;
+  const head=['#','Date','Type','Pair','Dir','Qty_XRP','Entry_USD','Exit_USD','Fee_XRP','PnL_USD','PnL_XRP','ROI_pct','Notes'];
+  const out=[head.join(',')];
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i], c=calc(r, rate);
     out.push([
-      i+1,r.date||'',r.type||'',r.pair||'',r.dir||'',
-      r.qty||'',r.entry||'',r.exit||'',r.fee||'',
-      isFinite(c.usd)?c.usd.toFixed(2):'',
-      isFinite(c.xrp)?c.xrp.toFixed(6):'',
-      isFinite(c.roi)?(c.roi*100).toFixed(2):'',
+      i+1, r.date||'', r.type||'', r.pair||'', r.dir||'',
+      r.qty||'', r.entry||'', r.exit||'', r.fee||'',
+      c.usd===null ? '' : c.usd.toFixed(2),
+      c.xrp===null ? '' : c.xrp.toFixed(6),
+      c.roi===null ? '' : (c.roi*100).toFixed(2),
       '"'+(r.notes||'').replace(/"/g,'""')+'"'
     ].join(','));
   }
-  var blob=new Blob([out.join('\n')],{type:'text/csv'});
-  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  const blob=new Blob([out.join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download='shibex_xrp_journal.csv'; a.click(); URL.revokeObjectURL(url);
 }
 
 function saveJSON(){
-  var blob=new Blob([JSON.stringify({
-    rows:rows, rate:$('rate').value, def:$('defPair').value,
+  const blob=new Blob([JSON.stringify({
+    rows, rate:$('rate').value, def:$('defPair').value,
     bS:$('begSpot').value, bF:$('begFut').value, d:$('jdate').value
   },null,2)],{type:'application/json'});
-  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download='shibex_xrp_journal.json'; a.click(); URL.revokeObjectURL(url);
 }
 
 function loadJSON(inp){
-  var f=inp.files[0]; if(!f) return;
-  var r=new FileReader();
-  r.onload=function(){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
     try{
-      var d=JSON.parse(r.result);
-      rows=Array.isArray(d.rows)?d.rows:[];
+      const d=JSON.parse(r.result);
+      rows = Array.isArray(d.rows)?d.rows:[];
       if(d.rate) $('rate').value=d.rate;
       if(d.def)  $('defPair').value=d.def;
       if(d.bS)   $('begSpot').value=d.bS;
@@ -238,21 +253,22 @@ function loadJSON(inp){
   r.readAsText(f); inp.value='';
 }
 
+/* ---------- Boot ---------- */
 function boot(){
   try{
-    setYear();
+    setYear && setYear();
     $('jdate').value=today();
-    var s=localStorage.getItem(KEY);
+    const s=localStorage.getItem(KEY);
     if(s){
       try{
-        var d=JSON.parse(s);
+        const d=JSON.parse(s);
         rows=(Array.isArray(d.rows)&&d.rows.length)?d.rows:[newRow()];
         if(d.rate) $('rate').value=d.rate;
         if(d.def)  $('defPair').value=d.def;
         if(d.bS)   $('begSpot').value=d.bS;
         if(d.bF)   $('begFut').value=d.bF;
         if(d.d)    $('jdate').value=d.d;
-      }catch(e){ rows=[newRow()]; }
+      }catch{ rows=[newRow()]; }
     }else{
       rows=[newRow()];
     }
@@ -264,11 +280,11 @@ function boot(){
     $('load').addEventListener('change', function(){ loadJSON(this); });
     render();
   }catch(e){
-    var er=$('err'); if(er){ er.textContent='Boot error: '+ e.message; }
+    const er=$('err'); if(er){ er.textContent='Boot error: '+ e.message; }
   }
 }
 document.addEventListener('DOMContentLoaded', boot);
-window.addEventListener('load', function(){ if(!$('tbody').children.length){ boot(); }});
+window.addEventListener('load', ()=>{ if(!$('tbody').children.length){ boot(); }});
 </script>
 </body>
 </html>
